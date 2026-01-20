@@ -1,0 +1,4 @@
+# ingestion
+docling>=0.1.0
+qdrant-client>=1.9.0
+sentence-transformers
