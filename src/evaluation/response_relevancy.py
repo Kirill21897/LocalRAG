@@ -1,6 +1,6 @@
 from openai import AsyncOpenAI
 from ragas.llms import llm_factory
-from ragas.embeddings import HuggingfaceEmbeddings  # <-- импортируем нужный класс
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from ragas import SingleTurnSample
 from ragas.metrics import ResponseRelevancy
 
@@ -12,8 +12,8 @@ async def getting_resp_rel_metric(judje_model, embeddings_model_name, user_input
 
     llm = llm_factory(judje_model, client=client)
     
-    # Инициализируем эмбеддинги из HuggingFace
-    embeddings = HuggingfaceEmbeddings(model_name=embeddings_model_name)
+    # Инициализируем эмбеддинги через LangChain Community
+    embeddings = HuggingFaceEmbeddings(model_name=embeddings_model_name)
     
     sample = SingleTurnSample(
         user_input=user_input,

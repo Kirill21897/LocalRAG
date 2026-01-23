@@ -1,7 +1,7 @@
 import requests
 
 class Generator:
-    def __init__(self, model_name="qwen2.5:7b", base_url="http://192.168.88.21:91"):
+    def __init__(self, model_name="qwen3:14b", base_url="http://192.168.88.21:91"):
         self.url = f"{base_url}/api/generate"
         self.model_name = model_name
 
