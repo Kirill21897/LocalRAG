@@ -10,4 +10,4 @@ langchain
 langchain-community
 pandas
 datasets
-langchain-text-splitter
+langchain-text-splitters
