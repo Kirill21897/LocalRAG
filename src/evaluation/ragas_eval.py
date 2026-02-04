@@ -63,7 +63,7 @@ class RagasEvaluator:
             if hasattr(metric, 'embeddings'):
                 metric.embeddings = self.embeddings
 
-    def run_evaluation(self, questions, answers, contexts, ground_truths):
+    def run_evaluation(self, questions, answers, contexts, ground_truths, max_workers=1):
         """
         Runs Ragas evaluation on the provided data.
         
@@ -72,6 +72,7 @@ class RagasEvaluator:
             answers (list): List of generated answers.
             contexts (list): List of lists of retrieved context strings.
             ground_truths (list): List of ground truth answers.
+            max_workers (int): Number of workers for parallel evaluation.
             
         Returns:
             pd.DataFrame: DataFrame containing the evaluation results with numeric metrics.
@@ -85,10 +86,10 @@ class RagasEvaluator:
         }
         dataset = Dataset.from_dict(data)
         
-        print("Starting Ragas evaluation pipeline...")
+        print(f"Starting Ragas evaluation pipeline with {max_workers} workers...")
         # Configure run to use single thread to avoid local LLM overload
         # and set a high timeout for the run configuration itself if applicable
-        my_run_config = RunConfig(timeout=1200, max_workers=1)
+        my_run_config = RunConfig(timeout=1200, max_workers=max_workers)
         
         results = evaluate(
             dataset=dataset,
