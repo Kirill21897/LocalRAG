@@ -1,8 +1,13 @@
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
+try:
+    from sentence_transformers import SentenceTransformer
+    from sklearn.metrics.pairwise import cosine_similarity
+    import numpy as np
+except ImportError as e:
+    raise ImportError(f"Semantic chunker requires extra dependencies. Please install them: pip install sentence-transformers scikit-learn numpy. Error: {e}")
+
 import re
 from typing import List
+from src.model_cache import get_shared_embedding_model
 
 def chunk_semantic(text: str, threshold: float = 0.6) -> List[str]:
     """
@@ -12,40 +17,53 @@ def chunk_semantic(text: str, threshold: float = 0.6) -> List[str]:
     3. Сравнивает косинусное сходство соседних предложений.
     4. Если сходство меньше порога (threshold), начинается новый чанк.
     """
-    # 1. Разбивка на предложения
-    sentences = re.split(r'(?<=[.!?])\s+', text)
-    sentences = [{'sentence': x, 'index': i} for i, x in enumerate(sentences) if x.strip()]
+    # 1. Разбивка на предложения (используем ту же логику, что и в sentence window для консистентности)
+    abbreviations = [
+        "г.", "ул.", "им.", "см.", "т.д.", "т.п.", "т.е.", "руб.", "коп.", "кв.", "м.", "кг.",
+        "рис.", "табл.", "стр.", "просп.", "пер.", "обл."
+    ]
+    processed_text = text
+    for abbr in abbreviations:
+        processed_text = processed_text.replace(abbr, abbr.replace(".", "<DOT>"))
+        
+    raw_sentences = re.split(r'(?<=[.!?])\s+', processed_text)
     
+    sentences = []
+    for s in raw_sentences:
+        s_restored = s.replace("<DOT>", ".").strip()
+        if s_restored:
+            sentences.append({'sentence': s_restored})
+            
     if not sentences:
         return []
         
-    # 2. Инициализация модели (используем ту же, что и в проекте, если возможно, или легкую)
-    # Используем легкую модель для скорости в демо
-    model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+    # 2. Получение модели и эмбеддингов
+    model = get_shared_embedding_model()
     
-    # 3. Эмбеддинги
     texts = [x['sentence'] for x in sentences]
     embeddings = model.encode(texts)
     
-    # 4. Группировка
+    # 3. Группировка
     chunks = []
     current_chunk_sentences = []
     
-    for i in range(len(sentences)):
-        sentence = sentences[i]['sentence']
-        current_chunk_sentences.append(sentence)
-        
-        # Если это последнее предложение, просто сохраняем чанк
-        if i == len(sentences) - 1:
-            chunks.append(" ".join(current_chunk_sentences))
-            break
-            
-        # Считаем сходство с следующим предложением
+    # Добавляем первое предложение
+    current_chunk_sentences.append(sentences[0]['sentence'])
+    
+    for i in range(len(sentences) - 1):
+        # Считаем сходство между текущим и следующим предложением
         sim = cosine_similarity([embeddings[i]], [embeddings[i+1]])[0][0]
         
-        # Если сходство ниже порога, значит тема сменилась -> закрываем чанк
-        if sim < threshold:
+        if sim >= threshold:
+            # Тема продолжается
+            current_chunk_sentences.append(sentences[i+1]['sentence'])
+        else:
+            # Тема сменилась, закрываем текущий чанк
             chunks.append(" ".join(current_chunk_sentences))
-            current_chunk_sentences = []
+            current_chunk_sentences = [sentences[i+1]['sentence']]
+            
+    # Не забываем добавить последний чанк, если он не пуст
+    if current_chunk_sentences:
+        chunks.append(" ".join(current_chunk_sentences))
             
     return chunks

@@ -7,9 +7,11 @@ from ragas.metrics import (
     context_precision,
     context_recall,
 )
-from ragas.llms import llm_factory
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from openai import AsyncOpenAI
+from ragas.llms import LangchainLLMWrapper
+from langchain_community.chat_models import ChatOllama
+# from langchain_openai import ChatOpenAI
+# from langchain_community.embeddings import HuggingFaceEmbeddings # Removed to use shared cache
+from src.model_cache import SharedEmbeddings
 import config.config as cfg
 from ragas.run_config import RunConfig
 
@@ -18,18 +20,27 @@ class RagasEvaluator:
         """
         Initializes the Ragas Evaluator with LLM and Embeddings from config.
         """
-        # Setup LLM client with EXTREMELY high timeout
-        self.client = AsyncOpenAI(
-            base_url=cfg.OLLAMA_BASE_URL,
-            api_key=cfg.OLLAMA_API_KEY,
-            timeout=1200.0 # 20 minutes timeout
+        # Setup LLM via ChatOllama to natively support num_ctx and other params
+        # This fixes the "unexpected keyword argument 'num_ctx'" error
+        
+        # Clean base_url (remove /v1 if present as ChatOllama expects base url)
+        ollama_url = cfg.OLLAMA_BASE_URL.replace("/v1", "")
+        
+        self.llm = ChatOllama(
+            model=cfg.JUDGE_MODEL,
+            base_url=ollama_url,
+            temperature=0.0,
+            num_ctx=16384,      # Increase context window to 16k tokens
+            num_predict=4096,   # Explicit generation limit
+            repeat_penalty=1.1, # Prevent infinite loops
+            timeout=1200.0      # 20 minutes timeout
         )
         
-        # Create LLM wrapper
-        self.judge_llm = llm_factory(cfg.JUDGE_MODEL, client=self.client)
+        # Wrap it for Ragas
+        self.judge_llm = LangchainLLMWrapper(self.llm)
         
-        # Setup Embeddings
-        self.embeddings = HuggingFaceEmbeddings(model_name=cfg.EMBEDDING_MODEL)
+        # Setup Embeddings using Shared Cache to prevent reloading and OOM
+        self.embeddings = SharedEmbeddings()
         
         # Define metrics list
         self.metrics = [
@@ -97,10 +108,3 @@ class RagasEvaluator:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
                 
         return df
-
-    def save_results(self, df, output_path):
-        """
-        Saves the evaluation results to a CSV file.
-        """
-        df.to_csv(output_path, index=False)
-        print(f"Results saved to {output_path}")

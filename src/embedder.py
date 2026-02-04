@@ -1,14 +1,18 @@
 import uuid
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
-from sentence_transformers import SentenceTransformer
+from src.model_cache import get_shared_embedding_model
 
 def vectorize_and_upload(chunks, file_name, collection_name="docs_collection"):
     # 1. Инициализация модели и клиента
     # Для работы в памяти используйте ":memory:", для Docker — "http://localhost:6333"
     client = QdrantClient(":memory:") 
-    model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-    vector_size = 384 # Размерность для данной модели
+    model = get_shared_embedding_model()
+    
+    # Generate one vector to determine size
+    dummy_vec = model.encode("test")
+    vector_size = len(dummy_vec)
+    # vector_size = 384 # Размерность для данной модели
 
     # 2. Создаем или пересоздаем коллекцию
     if not client.collection_exists(collection_name):
