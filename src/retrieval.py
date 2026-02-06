@@ -15,5 +15,5 @@ def retrieve(query, q_client, embed_model, collection_name="docs_collection", to
         for hit in search_results.points
     ]
 
-    print(f"Найдено {len(retrieved_chunks)} кандидатов через векторный поиск.")
+    # print(f"Найдено {len(retrieved_chunks)} кандидатов через векторный поиск.")
     return retrieved_chunks

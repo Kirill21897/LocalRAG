@@ -52,7 +52,7 @@ def get_shared_embedding_model(model_name=None):
         model_name = cfg.EMBEDDING_MODEL
 
     if _SHARED_EMBEDDING_MODEL is None:
-        print(f"Loading shared embedding model (Ollama): {model_name}...")
+        # print(f"Loading shared embedding model (Ollama): {model_name}...")
         _SHARED_EMBEDDING_MODEL = OllamaEmbeddingWrapper(
             model_name=model_name,
             base_url=cfg.OLLAMA_BASE_URL

@@ -86,7 +86,7 @@ class RagasEvaluator:
         }
         dataset = Dataset.from_dict(data)
         
-        print(f"Starting Ragas evaluation pipeline with {max_workers} workers...")
+        # print(f"Starting Ragas evaluation pipeline with {max_workers} workers...")
         # Configure run to use single thread to avoid local LLM overload
         # and set a high timeout for the run configuration itself if applicable
         my_run_config = RunConfig(timeout=1200, max_workers=max_workers)

@@ -22,7 +22,7 @@ def vectorize_and_upload(chunks, file_name, collection_name="docs_collection"):
         )
 
     # 3. Генерация эмбеддингов
-    print(f"Генерация векторов для {len(chunks)} чанков...")
+    # print(f"Генерация векторов для {len(chunks)} чанков...")
     embeddings = model.encode(chunks)
 
     # 4. Формирование точек (Points) для Qdrant
@@ -44,6 +44,6 @@ def vectorize_and_upload(chunks, file_name, collection_name="docs_collection"):
 
     # 5. Загрузка в базу
     client.upsert(collection_name=collection_name, points=points)
-    print(f"Данные успешно загружены в коллекцию '{collection_name}'")
+    # print(f"Данные успешно загружены в коллекцию '{collection_name}'")
     
     return client, model # Возвращаем для дальнейшего поиска

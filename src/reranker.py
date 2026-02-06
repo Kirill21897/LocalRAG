@@ -22,7 +22,7 @@ def rerank(query, chunks, top_n=3):
     pairs = [[query, chunk["text"]] for chunk in chunks]
 
     # Получаем оценки релевантности
-    scores = _rerank_model.predict(pairs)
+    scores = _rerank_model.predict(pairs, show_progress_bar=False)
 
     # Добавляем скоры к чанкам
     for i, score in enumerate(scores):
@@ -31,5 +31,5 @@ def rerank(query, chunks, top_n=3):
     # Сортируем по убыванию оценки реранкера
     sorted_chunks = sorted(chunks, key=lambda x: x["rerank_score"], reverse=True)
 
-    print(f"Переранжирование завершено. Выбрано топ-{top_n} наиболее релевантных.")
+    # print(f"Переранжирование завершено. Выбрано топ-{top_n} наиболее релевантных.")
     return sorted_chunks[:top_n]
